@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { Form, Input, Button, message } from 'antd';
+import { Flex, Form, Input, Button, message } from 'antd';
 
 import { AuthService } from '../../../services';
 
@@ -90,6 +90,12 @@ const RegisterPage: React.FC = () => {
         <Button type="primary" htmlType="submit" block>
           Register
         </Button>
+      </Form.Item>
+
+      <Form.Item>
+        <Flex justify="center">
+          <a href="/auth/login">You already have an account. Let's login</a>
+        </Flex>
       </Form.Item>
     </Form>
   );

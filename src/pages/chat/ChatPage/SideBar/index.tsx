@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Layout, Tabs, Input, List, Avatar, Button } from "antd";
-import { UserOutlined, MessageOutlined, PlusOutlined, CommentOutlined } from "@ant-design/icons";
+import { Layout, Tabs, Input, List, Avatar, Button, Flex, Divider } from "antd";
+import { UserOutlined, MessageOutlined, UserAddOutlined, CommentOutlined } from "@ant-design/icons";
 import classNames from "classnames";
 
 import "./index.css";
@@ -59,67 +59,101 @@ const SideBar: React.FC<SideBarProps> = ({ onContactClick, onChatClick }) => {
 
   const renderTabButton = () => {
     if (activeTab === "contacts") {
-      return <Button icon={<PlusOutlined />}>Add Contact</Button>;
+      return <Button shape="circle" icon={<UserAddOutlined />} />;
     }
     if (activeTab === "chats") {
-      return <Button icon={<CommentOutlined />}>New Chat</Button>;
+      return <Button shape="circle" icon={<CommentOutlined />} />;
     }
     return null;
   };
 
   return (
-    <Layout.Sider width="30%" style={{ background: "#fff", borderRight: "1px solid #ddd" }}>
-      <div className="tab-header">
-        <h3>{activeTab === "contacts" ? "Contacts" : "Chats"}</h3>
-        {renderTabButton()}
-      </div>
+    <Layout.Sider width="25vw" style={{ background: "#fff", borderRight: "1px solid #ddd" }}>
+      <Flex
+        vertical
+        style={{
+          height: "100%",
+          overflowY: "auto",
+          borderRight: "1px solid #ddd",
+          padding: "16px",
+        }}
+      >
+        <Flex
+          className="side-bar-header"
+          justify="space-between"
+          align="center"
+        >
+          <h3 style={{ flex: 1, textAlign: 'center', margin: 0 }}>
+            {activeTab === "contacts" ? "Contacts" : "Chats"}
+          </h3>
+          <div style={{ marginLeft: 'auto' }}>
+            {renderTabButton()}
+          </div>
+        </Flex>
 
-      <Input.Search
-        placeholder="Search..."
-        allowClear
-        style={{ margin: "16px 0" }}
-        onSearch={(value) => console.log("Search:", value)}
-      />
+        <Divider />
 
-      <Tabs defaultActiveKey="contacts" onChange={handleTabChange} tabBarGutter={16}>
-        <TabPane key="contacts" tab={<UserOutlined />}>
-          <List
-            itemLayout="horizontal"
-            dataSource={contacts}
-            renderItem={(item) => (
-              <List.Item
-                className={classNames("list-item", {
-                  "list-item-selected": selectedContactId === item.id,
-                })}
-                onClick={() => handleContactClick(item)}
-              >
-                <List.Item.Meta avatar={<Avatar src={item.avatar} />} title={item.name} />
-              </List.Item>
-            )}
-          />
-        </TabPane>
+        <Input.Search
+          placeholder="Search..."
+          allowClear
+          onSearch={(value) => console.log("Search:", value)}
+          style={{ margin: "8px" }}
+        />
 
-        <TabPane key="chats" tab={<MessageOutlined />}>
-          <List
-            itemLayout="horizontal"
-            dataSource={chats}
-            renderItem={(item) => (
-              <List.Item
-                className={classNames("list-item", {
-                  "list-item-selected": selectedChatId === item.id,
-                })}
-                onClick={() => handleChatClick(item)}
-              >
-                <List.Item.Meta
-                  avatar={<Avatar icon={<UserOutlined />} />}
-                  title={item.name}
-                  description={item.lastMessage}
-                />
-              </List.Item>
-            )}
-          />
-        </TabPane>
-      </Tabs>
+        <Divider />
+        
+        <Tabs
+          defaultActiveKey="contacts"
+          onChange={handleTabChange}
+          tabBarGutter={16}
+        >
+          <TabPane key="contacts" tab={
+            <Flex style={{ width: "10vw" }} justify="center">
+              <Button shape="circle" icon={<UserOutlined />} />
+            </Flex>
+          }>
+            <List
+              itemLayout="horizontal"
+              dataSource={contacts}
+              renderItem={(item) => (
+                <List.Item
+                  className={classNames("list-item", {
+                    "list-item-selected": selectedContactId === item.id,
+                  })}
+                  onClick={() => handleContactClick(item)}
+                >
+                  <List.Item.Meta avatar={<Avatar src={item.avatar} />} title={item.name} />
+                </List.Item>
+              )}
+            />
+          </TabPane>
+
+          <TabPane key="chats" tab={
+            <Flex style={{ width: "10vw" }} justify="center">
+              <Button shape="circle" icon={<MessageOutlined />} />
+            </Flex>
+          }>
+            <List
+              itemLayout="horizontal"
+              dataSource={chats}
+              renderItem={(item) => (
+                <List.Item
+                  className={classNames("list-item", {
+                    "list-item-selected": selectedChatId === item.id,
+                  })}
+                  onClick={() => handleChatClick(item)}
+                >
+                  <List.Item.Meta
+                    avatar={<Avatar icon={<UserOutlined />} />}
+                    title={item.name}
+                    description={item.lastMessage}
+                  />
+                </List.Item>
+              )}
+            />
+          </TabPane>
+        </Tabs>
+      </Flex>
     </Layout.Sider>
   );
 };

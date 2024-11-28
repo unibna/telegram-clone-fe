@@ -10,7 +10,7 @@ const DefaultLayout: React.FC = () => {
 
   const checkAuthenticated = () => {
     setIsLoading(true);
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('token');
 
     if (token) {
       setIsAuthenticated(true);

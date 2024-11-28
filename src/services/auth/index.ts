@@ -1,15 +1,12 @@
 import axios from "axios";
 
-const AUTH_API_URL = process.env.REACT_APP_API_URL + '/auth';
+const AUTH_API_URL = process.env.REACT_APP_API_URL + '/api/auth';
 
 const register = async (
   data: {
     username: string,
     email: string,
-    fullName: string,
-    phoneNumber: string,
     password: string
-    passwordConfirm: string
   }
 ): Promise<any> => {
   try {
@@ -22,18 +19,18 @@ const register = async (
         }
       }
     )
-
+    console.log('response:', response);
     return response.data;
   } catch (error: any) {
     throw error;
   }
 };
 
-const login = async (email: string, password: string): Promise<any> => {
+const login = async (username: string, password: string): Promise<any> => {
   try {
     const response = await axios.post(
-      AUTH_API_URL + '/token',
-      { email, password },
+      AUTH_API_URL + '/login',
+      { username, password },
       {
         headers: {
           'Content-Type': 'application/json',

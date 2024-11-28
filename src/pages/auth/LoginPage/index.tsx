@@ -1,21 +1,28 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
-import { Form, Input, Button, message } from 'antd';
+import { Form, Input, Button, message, Flex } from 'antd';
 
 import { AuthService } from '../../../services';
 
 const LoginPage: React.FC = () => {
   const [form] = Form.useForm();
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
     try {
       const values = await form.validateFields();
-      const { email, password } = values;
+      const { username, password } = values;
 
-      const response = await AuthService.login(email, password);
-      console.log(response);
+      const response = await AuthService.login(username, password);
+      if (response) {
+        message.success('You have successfully logged in!');
+        localStorage.setItem('token', response?.data?.token);
+        navigate('/');
+      }
     } catch (error: any) {
-      message.error(error.message);
+      const response = error?.response;
+      message.error(response?.data?.message || 'Unexpected error occurred!');
     }
   };
 
@@ -30,13 +37,10 @@ const LoginPage: React.FC = () => {
       <h2 style={{ textAlign: 'center' }}>Login</h2>
 
       <Form.Item
-        name="email"
-        rules={[
-          { type: 'email', message: 'The input is not a valid E-mail!' },
-          { required: true, message: 'Please enter your email!' },
-        ]}
+        name="username"
+        rules={[{ required: true, message: 'Please enter your username!' }]}
       >
-        <Input placeholder="Email" />
+        <Input placeholder="Username" />
       </Form.Item>
 
       <Form.Item
@@ -51,6 +55,12 @@ const LoginPage: React.FC = () => {
           Login
         </Button>
 
+      </Form.Item>
+
+      <Form.Item>
+        <Flex justify="center">
+          <a href="/auth/register">You don't have an account? Register here</a>
+        </Flex>
       </Form.Item>
     </Form>
   );

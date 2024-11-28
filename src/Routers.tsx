@@ -11,12 +11,18 @@ const AppRouter: React.FC = () => {
     <Router>
       <Routes>
 
+        <Route path="/" element={<DefaultLayout />}>
+          <Route index element={<ChatPage />} />
+        </Route>
+
         <Route path="/auth" element={<AuthLayout />}>
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
         </Route>
 
         <Route path="/chat" element={<DefaultLayout />}>
+          <Route index element={<ChatPage />} />
+
           <Route path="" element={<ChatPage />} />
         </Route>
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { Form, Input, Button, message } from 'antd';
 
@@ -6,14 +7,23 @@ import { AuthService } from '../../../services';
 
 const RegisterPage: React.FC = () => {
   const [form] = Form.useForm();
+  const navigate = useNavigate();
 
   const handleRegister = async () => {
     try {
       const values = await form.validateFields();
+      const { email, username, password } = values;
+      const requestData = { email, username, password };
 
-      const response = await AuthService.register(values);
+      const response = await AuthService.register(requestData);
+
+      if (response) {
+        message.success('You have successfully registered!');
+        navigate('/auth/login');
+      }
     } catch (error: any) {
-      message.error(error.message);
+      const response = error?.response;
+      message.error(response?.data?.message);
     }
   };
 
@@ -42,26 +52,6 @@ const RegisterPage: React.FC = () => {
         rules={[{ required: true, message: 'Please enter your username!' }]}
       >
         <Input placeholder="Username" />
-      </Form.Item>
-
-      <Form.Item
-        name="fullName"
-        rules={[{ required: true, message: 'Please enter your full name!' }]}
-      >
-        <Input placeholder="Full Name" />
-      </Form.Item>
-
-      <Form.Item
-        name="phoneNumber"
-        rules={[
-          { required: true, message: 'Please enter your phone number!' },
-          {
-            pattern: /^[0-9]+$/,
-            message: 'Phone number must be numeric!',
-          },
-        ]}
-      >
-        <Input placeholder="Phone Number" />
       </Form.Item>
 
       <Form.Item

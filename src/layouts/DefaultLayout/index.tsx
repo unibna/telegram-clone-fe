@@ -5,8 +5,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Layout, Spin, message } from 'antd';
 
 import { useAppDispatch } from '../../hooks';
-import { fetchMe } from '../../store/slices/userSlice';
-import { refreshToken, logout } from '../../store/slices/authSlice';
+import { fetchMe } from '../../slices/userSlice';
+import { refreshToken, logout } from '../../slices/authSlice';
 
 import './index.css'
 

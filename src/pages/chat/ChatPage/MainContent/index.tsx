@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 
-import { Button, Flex, Input, Layout } from "antd";
+import { Button, Flex, Input, Layout, message } from "antd";
 
 import { ChatMessage } from "../../../../components/chat";
+
+import { RoomService } from "../../../../services";
 
 interface MainContentProps {
   selectedContact: any;
@@ -11,10 +14,16 @@ interface MainContentProps {
 
 const MainContent: React.FC<MainContentProps> = ({ selectedContact, selectedRoom }) => {
   const [messages, setMessages] = useState<any[]>([]);
-  const [message, setMessage] = useState<string>("");
+  const [messageValue, setMessageValue] = useState<string>("");
+
+  const userInfo = useSelector((state: any) => state.user.userInfo);
+
+  const handleSendMessageToRoom = () => { }
+
+  const handleSendMessageToContact = () => { }
 
   const handleSendMessage = () => {
-    if (!message.trim()) return;
+    if (!messageValue.trim()) return;
 
     const newMessage = {
       sender: "user",
@@ -22,7 +31,44 @@ const MainContent: React.FC<MainContentProps> = ({ selectedContact, selectedRoom
       timestamp: new Date(),
     };
     setMessages([...messages, newMessage]);
-    setMessage("");
+    setMessageValue("");
+  };
+
+  const handleLoadMessageToContact = () => {
+    setMessages([]);
+  }
+
+  const handleLoadMessageToRoom = async () => {
+    try {
+      const response = await RoomService.listRoomMessages(selectedRoom.id);
+      console.log(response?.data);
+      
+      const responseMessages = response?.data.map((message: any) => ({
+        sender: message.user_id === userInfo.ID ? "user" : "contact",
+        text: message.content,
+        timestamp: new Date(message.CreatedAt),
+      }));
+  
+      console.log("responseMessages:", responseMessages);
+  
+      setMessages(responseMessages);
+    } catch (error: any) {
+      // Ensure that the error is converted to a string if it's an object
+      const errorMessage = error instanceof Error ? error.message : error || "Failed to load messages";
+      message.error(errorMessage);
+    }
+  };
+
+  const loadMessages = () => {
+    if (selectedContact) {
+      handleLoadMessageToContact();
+    } else if (selectedRoom) {
+      handleLoadMessageToRoom();
+    }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setMessageValue(e.target.value);
   };
 
   useEffect(() => {
@@ -36,19 +82,24 @@ const MainContent: React.FC<MainContentProps> = ({ selectedContact, selectedRoom
     };
 
     if (selectedContact || selectedRoom) {
-      fetchMessages();
+      loadMessages();
     }
   }, [selectedContact, selectedRoom]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
-  };
-
   if (!selectedContact && !selectedRoom) {
     return (
-      <Flex>
-        <h2>Please select a contact or chat.</h2>
-      </Flex>
+      <Layout.Content>
+        <Flex
+          className="chat-content"
+          style={{
+            padding: "16px",
+            height: "100%",
+            width: "100%",
+          }}
+        >
+          <h2>Please select a contact or room.</h2>
+        </Flex>
+      </Layout.Content>
     )
   }
 
@@ -64,6 +115,18 @@ const MainContent: React.FC<MainContentProps> = ({ selectedContact, selectedRoom
           overflowY: "auto",
         }}
       >
+        <Flex
+          className="chat-title"
+          style={{
+            backgroundColor: "#fff",
+            marginBottom: "8px",
+            padding: "4px 8px",
+            borderRadius: "8px",
+          }}
+        >
+          <h2>{selectedContact ? selectedContact.name : selectedRoom.name}</h2>
+        </Flex>
+
         <ChatMessage messages={messages} />
 
         <Flex
@@ -78,7 +141,7 @@ const MainContent: React.FC<MainContentProps> = ({ selectedContact, selectedRoom
           <Input.TextArea
             rows={2}
             placeholder="Type a message..."
-            value={message}
+            value={messageValue}
             onChange={handleInputChange}
             style={{
               marginRight: "8px",
@@ -87,7 +150,7 @@ const MainContent: React.FC<MainContentProps> = ({ selectedContact, selectedRoom
               width: "100%",
             }}
           />
-          <Button type="primary" onClick={handleSendMessage} disabled={!message.trim()}>
+          <Button type="primary" onClick={handleSendMessage} disabled={!messageValue.trim()}>
             Send
           </Button>
         </Flex>

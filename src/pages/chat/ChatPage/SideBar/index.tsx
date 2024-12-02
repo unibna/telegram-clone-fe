@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import {
-  Layout, Tabs, Input, List, Avatar, 
+  Layout, Tabs, Input, List, Avatar,
   Button, Modal, Flex, Divider, message
 } from "antd";
 import {
@@ -19,21 +19,16 @@ import "./index.css";
 const { TabPane } = Tabs;
 
 interface Contact {
-  id: string;
+  id: number;
   name: string;
-  avatar: string;
+  email?: string;
+  avatar?: string;
 }
 
 interface Room {
   id: number;
   name: string;
   description: string;
-}
-
-interface Chat {
-  id: string;
-  name: string;
-  lastMessage: string;
 }
 
 interface SideBarProps {
@@ -52,7 +47,7 @@ const SideBar: React.FC<SideBarProps> = ({
   const userInfo = useSelector((state: any) => state.user.userInfo);
 
   const [activeTab, setActiveTab] = useState("contacts");
-  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -62,6 +57,9 @@ const SideBar: React.FC<SideBarProps> = ({
   const [rooms, setRooms] = useState<Room[]>([]);
 
   const [contacts, setContacts] = useState<Contact[]>([])
+  const [selectedAddContactId, setSelectedAddContactId] = useState<number | null>(null);
+  
+  const [userContacts, setUserContacts] = useState<Contact[]>([])
 
   const handleTabChange = (key: string) => {
     setActiveTab(key);
@@ -88,22 +86,21 @@ const SideBar: React.FC<SideBarProps> = ({
     navigate("/auth/login");
   };
 
-  const handleListContacts = async () => {
+  const handleListUserContacts = async () => {
     try {
-      const response = await ContactService.list();
+      const response = await ContactService.listUserContacts();
 
       response.data = response.data.map((contact: any) => {
         return {
           id: contact.user_id,
           name: contact.user_name,
-          avatar: "https://via.placeholder.com/40",
         };
       });
 
-      setContacts(response.data);
+      setUserContacts(response.data);
     } catch (error: any) {
-      console.error("Failed to list contacts:", error);
-      message.error(error.response?.data?.message || "Failed to list contacts.");
+      console.error("Failed to list user contacts:", error);
+      message.error(error.response?.data?.message || "Failed to list user contacts.");
     }
   }
 
@@ -158,25 +155,65 @@ const SideBar: React.FC<SideBarProps> = ({
     }
   };
 
-  const handleAddContact = () => {
+  const handleAddContactButton = () => {
     setIsModalVisible(true); // Show the modal
     setModalName("contact");
   }
 
-  const handleAddRoom = () => {
+  const handleListContacts = async (keyword: string) => {
+    try {
+      const response = await ContactService.listContacts(keyword);
+
+      console.log("response.data:", response.data);
+
+      response.data = response.data.map((contact: any) => {
+        return {
+          id: contact.ID,
+          name: contact.username,
+          email: contact.email,
+        };
+      });
+
+      setContacts(response.data);
+    } catch (error: any) {
+      console.error("Failed to list user contacts:", error);
+      message.error(error.response?.data?.message || "Failed to list user contacts.");
+    }
+  }
+
+  const handleSelectAddContactId = async (contact: Contact) => {
+    setSelectedAddContactId(contact.id);
+  }
+
+  const handleAddContact = async () => {
+    if (!selectedAddContactId) {
+      message.error("Please select a contact to add.");
+      return;
+    }
+
+    try {
+      const response = await ContactService.addContact(userInfo.ID, selectedAddContactId);
+      console.log("response.data:", response.data);
+      message.success(`Contact added successfully!`);
+      setIsModalVisible(false);
+      setSelectedAddContactId(null);
+      await handleListUserContacts();
+    } catch (error: any) {
+      message.error(error.response?.data?.message || "Failed to add contact.");
+    }
+  }
+
+  const handleAddRoomButton = () => {
     setIsModalVisible(true); // Show the modal
     setModalName("room");
   };
 
   const renderTabButton = () => {
     if (activeTab === "contacts") {
-      return <Button shape="circle" icon={<UserAddOutlined />} onClick={handleAddContact} />;
-    }
-    if (activeTab === "chats") {
-      return <Button shape="circle" icon={<CommentOutlined />} />;
+      return <Button shape="circle" icon={<UserAddOutlined />} onClick={handleAddContactButton} />;
     }
     if (activeTab === "rooms") {
-      return <Button shape="circle" icon={<UsergroupAddOutlined />} onClick={handleAddRoom} />;
+      return <Button shape="circle" icon={<UsergroupAddOutlined />} onClick={handleAddRoomButton} />;
     }
     return null;
   };
@@ -187,7 +224,7 @@ const SideBar: React.FC<SideBarProps> = ({
   };
 
   useEffect(() => {
-    handleListContacts();
+    handleListUserContacts();
     handleListRooms();
   }, []);
 
@@ -236,7 +273,7 @@ const SideBar: React.FC<SideBarProps> = ({
           <TabPane key="contacts" tab="Contacts">
             <List
               itemLayout="horizontal"
-              dataSource={contacts}
+              dataSource={userContacts}
               renderItem={(item) => (
                 <List.Item
                   className={classNames("list-item", {
@@ -283,7 +320,7 @@ const SideBar: React.FC<SideBarProps> = ({
             marginTop: "auto",
           }}
         >
-          <Avatar src={userInfo?.avatar} size="large" />
+          <Avatar>{userInfo.username.charAt(0).toUpperCase()}</Avatar>
           <div style={{ marginLeft: "12px" }}>
             <h4 style={{ margin: 0 }}>{userInfo?.username}</h4>
             <p style={{ margin: 0, fontSize: "12px", color: "#888" }}>{userInfo?.email}</p>
@@ -327,16 +364,42 @@ const SideBar: React.FC<SideBarProps> = ({
       <Modal
         title="Add a new contact"
         visible={isModalVisible && (modalName === "contact")}
-        onOk={() => { }} // Handle contact addition
-        onCancel={handleModalCancel} // Cancel contact addition
+        onOk={handleAddContact}
+        onCancel={handleModalCancel}
         okText="Add"
         cancelText="Cancel"
       >
         <Input.Search
           placeholder="Enter email or username"
           allowClear
-          onSearch={(value) => console.log("Search:", value)}
+          onChange={(e) => handleListContacts(e.target.value)}
         />
+
+        {contacts && (
+          <List
+            size="small"
+            bordered
+            style={{ marginTop: 8 }}
+            dataSource={contacts}
+            renderItem={(item: any) => (
+              <List.Item
+                className={classNames("list-item", {
+                  "list-item-selected": selectedAddContactId === item.id,
+                })}
+                onClick={() => handleSelectAddContactId(item)}
+                style={{ cursor: 'pointer' }}
+              >
+                <Flex>
+                  <Avatar>{item.name.charAt(0).toUpperCase()}</Avatar>
+                  <div style={{ marginLeft: "12px" }}>
+                    <h4 style={{ margin: 0 }}>{item?.name}</h4>
+                    <p style={{ margin: 0, fontSize: "12px", color: "#888" }}>{item?.email}</p>
+                  </div>
+                </Flex>
+              </List.Item>
+            )}
+          />
+        )}
       </Modal>
     </Layout.Sider>
   );

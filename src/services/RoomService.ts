@@ -3,6 +3,7 @@ import axios from "axios";
 import AuthService from "./AuthService";
 
 const ROOM_API_URL = process.env.REACT_APP_API_URL + '/api/rooms';
+const USER_API_URL = process.env.REACT_APP_API_URL + '/api/users';
 
 const create = async (data: {
   name: string,
@@ -53,7 +54,25 @@ const listUserRooms = async (): Promise<any> => {
     headers = AuthService.getAuthHeaders(headers);
 
     const response = await axios.get(
-      ROOM_API_URL + '/me',
+      USER_API_URL + '/rooms',
+      { headers }
+    )
+
+    return response.data;
+  } catch (error: any) {
+    throw error;
+  }
+}
+
+const listRoomMessages = async (roomId: number): Promise<any> => {
+  try {
+    let headers = {
+      'Content-Type': 'application/json',
+    }
+    headers = AuthService.getAuthHeaders(headers);
+
+    const response = await axios.get(
+      ROOM_API_URL + `/${roomId}/messages`,
       { headers }
     )
 
@@ -66,7 +85,8 @@ const listUserRooms = async (): Promise<any> => {
 const RoomService = {
   create,
   join,
-  listUserRooms
+  listUserRooms,
+  listRoomMessages,
 }
 
 export default RoomService;

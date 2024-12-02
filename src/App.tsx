@@ -4,7 +4,7 @@ import './App.css';
 import { Provider } from 'react-redux';
 
 import Routers from './Routers';
-import store from './Store';
+import store from './store';
 
 
 function App() {

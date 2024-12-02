@@ -45,9 +45,44 @@ const login = async (username: string, password: string): Promise<any> => {
   }
 };
 
+const logout = () => {
+  localStorage.removeItem('token');
+}
+
+const refreshToken = async (): Promise<any> => {
+  const refreshToken = localStorage.getItem('refresh_token');
+  
+  try {
+    const response = await axios.post(
+      AUTH_API_URL + '/refresh-token',
+      { refreshToken },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    )
+
+    return response.data;
+  } catch (error: any) {
+    throw error;
+  }
+}
+
+const getAuthHeaders = (headers: any) => {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 const AuthService = {
   register,
-  login
+  login,
+  logout,
+  refreshToken,
+  getAuthHeaders
 };
 
 export default AuthService;

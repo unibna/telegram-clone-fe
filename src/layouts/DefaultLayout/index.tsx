@@ -1,42 +1,61 @@
 import React, { useEffect } from 'react';
-import { Layout, Spin } from 'antd';
-import './index.css';
 import { Outlet, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+
+import { Layout, Spin, message } from 'antd';
+
+import { useAppDispatch } from '../../hooks';
+import { fetchMe } from '../../store/slices/userSlice';
+import { refreshToken, logout } from '../../store/slices/authSlice';
+
+import './index.css'
 
 const DefaultLayout: React.FC = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const dispatch = useAppDispatch();
 
-  const checkAuthenticated = () => {
-    setIsLoading(true);
-    const token = localStorage.getItem('token');
+  const { isAuthenticated } = useSelector((state: any) => state.auth);
+  const { status: userStatus } = useSelector((state: any) => state.user);
 
-    if (token) {
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
-    }
+  const checkAuthentication = async () => {
+    console.log('-----> checkAuthentication');
 
-    setIsLoading(false);
-  }
-
-  useEffect(() => {
-    checkAuthenticated();
-  }, []);
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    const accessToken = localStorage.getItem('access_token');
+    if (!accessToken) {
       navigate('/auth/login');
+      return;
     }
-  }, [isLoading, isAuthenticated]);
 
-  if (isLoading) {
+    try {
+      await dispatch(fetchMe()).unwrap();
+    } catch (error: any) {
+      if (error === 'Token expired') {
+        try {
+          await dispatch(refreshToken()).unwrap();
+          await dispatch(fetchMe()).unwrap();
+        } catch (refreshError) {
+          message.error('Session expired. Please log in again.');
+          dispatch(logout());
+          navigate('/auth/login');
+        }
+      } else {
+        message.error(error || 'Authentication failed.');
+        dispatch(logout());
+        navigate('/auth/login');
+      }
+    }
+  };
+
+  useEffect(() => {
+    checkAuthentication();
+  }, [dispatch]);
+
+  if (userStatus === 'loading') {
     return (
       <Layout style={{ minHeight: '100vh' }}>
         <Spin size="large" />
       </Layout>
-    )
+    );
   }
 
   return (

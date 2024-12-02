@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { Form, Input, Button, message, Flex } from 'antd';
 
-import { AuthService } from '../../../services';
+import { AuthService } from "../../../services";
 
 const LoginPage: React.FC = () => {
   const [form] = Form.useForm();
@@ -17,7 +17,9 @@ const LoginPage: React.FC = () => {
       const response = await AuthService.login(username, password);
       if (response) {
         message.success('You have successfully logged in!');
-        localStorage.setItem('token', response?.data?.token);
+        console.log('response', response);
+        localStorage.setItem('access_token', response?.data?.access_token);
+        localStorage.setItem('refresh_token', response?.data?.refresh_token);
         navigate('/');
       }
     } catch (error: any) {

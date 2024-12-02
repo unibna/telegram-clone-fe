@@ -46,7 +46,8 @@ const login = async (username: string, password: string): Promise<any> => {
 };
 
 const logout = () => {
-  localStorage.removeItem('token');
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
 }
 
 const refreshToken = async (): Promise<any> => {

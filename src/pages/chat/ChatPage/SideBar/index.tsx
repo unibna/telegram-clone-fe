@@ -13,7 +13,7 @@ import {
 } from "@ant-design/icons";
 import classNames from "classnames";
 
-import { ContactService, RoomService, UserService } from "../../../../services"
+import { AuthService, ContactService, RoomService, UserService } from "../../../../services"
 import "./index.css";
 
 const { TabPane } = Tabs;
@@ -82,7 +82,7 @@ const SideBar: React.FC<SideBarProps> = ({
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    AuthService.logout();
     navigate("/auth/login");
   };
 

@@ -38,7 +38,6 @@ interface Chat {
 
 interface SideBarProps {
   onContactClick: (contact: Contact) => void;
-  onChatClick: (chat: Chat) => void;
   onRoomClick: (room: Room) => void;
 }
 
@@ -46,7 +45,6 @@ const defaultRoomData = { name: "", description: "" };
 
 const SideBar: React.FC<SideBarProps> = ({
   onContactClick,
-  onChatClick,
   onRoomClick
 }) => {
   const navigate = useNavigate();
@@ -55,7 +53,6 @@ const SideBar: React.FC<SideBarProps> = ({
 
   const [activeTab, setActiveTab] = useState("contacts");
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -65,12 +62,6 @@ const SideBar: React.FC<SideBarProps> = ({
   const [rooms, setRooms] = useState<Room[]>([]);
 
   const [contacts, setContacts] = useState<Contact[]>([])
-
-  const chats: Chat[] = [
-    { id: "101", name: "Project Team", lastMessage: "Meeting at 3 PM" },
-    { id: "102", name: "Jane Smith", lastMessage: "Thanks for the update!" },
-    { id: "103", name: "John Doe", lastMessage: "Let’s catch up tomorrow." },
-  ];
 
   const handleTabChange = (key: string) => {
     setActiveTab(key);
@@ -82,21 +73,12 @@ const SideBar: React.FC<SideBarProps> = ({
 
   const handleContactClick = (contact: Contact) => {
     setSelectedContactId(contact.id);
-    setSelectedChatId(null);
     setSelectedRoomId(null); // Deselect any selected room
     onContactClick(contact);
   };
 
-  const handleChatClick = (chat: Chat) => {
-    setSelectedChatId(chat.id);
-    setSelectedContactId(null);
-    setSelectedRoomId(null);
-    onChatClick(chat);
-  };
-
   const handleRoomClick = (room: Room) => {
     setSelectedRoomId(room.id);
-    setSelectedChatId(null);
     setSelectedContactId(null);
     onRoomClick(room);
   };
@@ -262,7 +244,7 @@ const SideBar: React.FC<SideBarProps> = ({
                   })}
                   onClick={() => handleContactClick(item)}
                 >
-                  <List.Item.Meta avatar={<Avatar src={item.avatar} />} title={item.name} />
+                  <List.Item.Meta avatar={<Avatar>{item.name.charAt(0).toUpperCase()}</Avatar>} title={item.name} />
                 </List.Item>
               )}
             />
@@ -281,31 +263,9 @@ const SideBar: React.FC<SideBarProps> = ({
                   onClick={() => handleRoomClick(item)}
                 >
                   <List.Item.Meta
-                    avatar={<Avatar icon={<UserOutlined />} />}
+                    avatar={<Avatar>{item.name.charAt(0).toUpperCase()}</Avatar>}
                     title={item.name}
                     description={item.description}
-                  />
-                </List.Item>
-              )}
-            />
-          </TabPane>
-
-          {/* Chats Tab */}
-          <TabPane key="chats" tab="Chats">
-            <List
-              itemLayout="horizontal"
-              dataSource={chats}
-              renderItem={(item) => (
-                <List.Item
-                  className={classNames("list-item", {
-                    "list-item-selected": selectedChatId === item.id,
-                  })}
-                  onClick={() => handleChatClick(item)}
-                >
-                  <List.Item.Meta
-                    avatar={<Avatar icon={<UserOutlined />} />}
-                    title={item.name}
-                    description={item.lastMessage}
                   />
                 </List.Item>
               )}
@@ -314,7 +274,7 @@ const SideBar: React.FC<SideBarProps> = ({
         </Tabs>
 
         <Flex
-        className="side-bar-footer"
+          className="side-bar-footer"
           style={{
             paddingTop: "8px",
             borderTop: "1px solid #ddd",

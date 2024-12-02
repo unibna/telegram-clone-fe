@@ -12,7 +12,7 @@ const list = async (): Promise<any> => {
     headers = AuthService.getAuthHeaders(headers);
 
     const response = await axios.get(
-      USER_CONTACT_API_URL + '/list_contact',
+      USER_CONTACT_API_URL + '/contacts',
       { headers }
     )
 

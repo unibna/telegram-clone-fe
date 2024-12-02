@@ -19,7 +19,7 @@ const register = async (
         }
       }
     )
-    console.log('response:', response);
+
     return response.data;
   } catch (error: any) {
     throw error;

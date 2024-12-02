@@ -1,8 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
-import { Layout, Tabs, Input, List, Avatar, Button, Modal, Flex, Divider, message } from "antd";
-import { UserOutlined, MessageOutlined, UserAddOutlined, UsergroupAddOutlined, CommentOutlined, LogoutOutlined } from "@ant-design/icons";
+import {
+  Layout, Tabs, Input, List, Avatar, 
+  Button, Modal, Flex, Divider, message
+} from "antd";
+import {
+  UserOutlined, UserAddOutlined,
+  UsergroupAddOutlined, CommentOutlined,
+  LogoutOutlined
+} from "@ant-design/icons";
 import classNames from "classnames";
 
 import { ContactService, RoomService, UserService } from "../../../../services"
@@ -29,24 +37,21 @@ interface Chat {
 }
 
 interface SideBarProps {
-  userInfo?: any;
   onContactClick: (contact: Contact) => void;
   onChatClick: (chat: Chat) => void;
   onRoomClick: (room: Room) => void;
 }
 
 const defaultRoomData = { name: "", description: "" };
-const defaultUserInfo = { username: "Unnamed", email: "unnamed@email.com", avatar: "" };
 
 const SideBar: React.FC<SideBarProps> = ({
-  userInfo = defaultUserInfo,
   onContactClick,
   onChatClick,
   onRoomClick
 }) => {
   const navigate = useNavigate();
 
-  const [userData, setUserData] = useState<any>(null);
+  const userInfo = useSelector((state: any) => state.user.userInfo);
 
   const [activeTab, setActiveTab] = useState("contacts");
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -104,7 +109,6 @@ const SideBar: React.FC<SideBarProps> = ({
   const handleListContacts = async () => {
     try {
       const response = await ContactService.list();
-      console.log("Contacts:", response.data);
 
       response.data = response.data.map((contact: any) => {
         return {
@@ -124,8 +128,6 @@ const SideBar: React.FC<SideBarProps> = ({
   const handleListRooms = async () => {
     try {
       const response = await RoomService.listUserRooms();
-
-      console.log("Rooms:", response.data);
 
       response.data = response.data.map((room: any) => {
         return {
@@ -149,7 +151,6 @@ const SideBar: React.FC<SideBarProps> = ({
         message.success(`Joined room successfully!`);
       }
     } catch (error: any) {
-      console.log("errors:", error)
       message.error(error.response?.data?.message || "Failed to join room.");
     }
   }
@@ -171,7 +172,6 @@ const SideBar: React.FC<SideBarProps> = ({
       setNewRoomData(defaultRoomData);
       await handleListRooms();
     } catch (error: any) {
-      console.log("errors:", error);
       message.error(error.response?.data?.message || "Failed to create room.");
     }
   };

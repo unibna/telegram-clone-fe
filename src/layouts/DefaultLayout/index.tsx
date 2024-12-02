@@ -18,8 +18,6 @@ const DefaultLayout: React.FC = () => {
   const { status: userStatus } = useSelector((state: any) => state.user);
 
   const checkAuthentication = async () => {
-    console.log('-----> checkAuthentication');
-
     const accessToken = localStorage.getItem('access_token');
     if (!accessToken) {
       navigate('/auth/login');

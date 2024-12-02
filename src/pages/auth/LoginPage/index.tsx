@@ -17,7 +17,6 @@ const LoginPage: React.FC = () => {
       const response = await AuthService.login(username, password);
       if (response) {
         message.success('You have successfully logged in!');
-        console.log('response', response);
         localStorage.setItem('access_token', response?.data?.access_token);
         localStorage.setItem('refresh_token', response?.data?.refresh_token);
         navigate('/');

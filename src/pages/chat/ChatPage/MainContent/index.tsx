@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 
-import { Button, Flex, Input, Layout, message } from "antd";
+import { Flex, Layout, message } from "antd";
 
-import { ChatMessage } from "../../../../components/chat";
+import { ChatInput, ChatMessages } from "../../../../components/chat";
 
-import { RoomService } from "../../../../services";
+import { RoomService, UserService } from "../../../../services";
+
+const WEBSOCKET_APP_URL = process.env.REACT_APP_WEBSOCKET_APP_URL;
 
 interface MainContentProps {
   selectedContact: any;
@@ -16,41 +18,75 @@ const MainContent: React.FC<MainContentProps> = ({ selectedContact, selectedRoom
   const [messages, setMessages] = useState<any[]>([]);
   const [messageValue, setMessageValue] = useState<string>("");
 
+  const [status, setStatus] = useState('Disconnected');
+  const wsRef = useRef<WebSocket | null>(null);
+
   const userInfo = useSelector((state: any) => state.user.userInfo);
 
   const handleSendMessageToRoom = () => { }
 
-  const handleSendMessageToContact = () => { }
+  const handleSendMessageToContact = () => {
+    console.log("wsRef.current:", wsRef.current);
+    console.log("selectedContact:", selectedContact);
+
+    const wsDirectMessage = {
+      type: 'direct',
+      receiver_id: selectedContact.id,
+      content: messageValue,
+    };
+    wsRef.current?.send(JSON.stringify(wsDirectMessage));
+
+    const newMessage = {
+      sender: "user",
+      text: messageValue,
+      timestamp: new Date(),
+    }
+    setMessages([...messages, newMessage])
+
+    console.log("WebSocket sent:", wsDirectMessage);
+    console.log("Message sent:", newMessage);
+
+    setMessageValue("");
+  }
 
   const handleSendMessage = () => {
     if (!messageValue.trim()) return;
 
-    const newMessage = {
-      sender: "user",
-      text: message,
-      timestamp: new Date(),
-    };
-    setMessages([...messages, newMessage]);
-    setMessageValue("");
+    if (selectedContact) {
+      handleSendMessageToContact();
+    } else if (selectedRoom) {
+      handleSendMessageToRoom();
+    }
   };
 
-  const handleLoadMessageToContact = () => {
-    setMessages([]);
+  const handleLoadMessageToContact = async () => {
+    try {
+      const response = await UserService.getDirectMessages(selectedContact.id);
+      console.log(response?.data);
+      const directMessages = response?.data.map((message: any) => ({
+        sender: message.sender_id === userInfo.ID ? "user" : "contact",
+        text: message.content,
+        timestamp: new Date(message.CreatedAt),
+      }));
+      setMessages(directMessages);
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || "Failed to load messages");
+    }
   }
 
   const handleLoadMessageToRoom = async () => {
     try {
       const response = await RoomService.listRoomMessages(selectedRoom.id);
       console.log(response?.data);
-      
+
       const responseMessages = response?.data.map((message: any) => ({
         sender: message.user_id === userInfo.ID ? "user" : "contact",
         text: message.content,
         timestamp: new Date(message.CreatedAt),
       }));
-  
+
       console.log("responseMessages:", responseMessages);
-  
+
       setMessages(responseMessages);
     } catch (error: any) {
       // Ensure that the error is converted to a string if it's an object
@@ -59,11 +95,11 @@ const MainContent: React.FC<MainContentProps> = ({ selectedContact, selectedRoom
     }
   };
 
-  const loadMessages = () => {
+  const loadMessages = async () => {
     if (selectedContact) {
-      handleLoadMessageToContact();
+      await handleLoadMessageToContact();
     } else if (selectedRoom) {
-      handleLoadMessageToRoom();
+      await handleLoadMessageToRoom();
     }
   }
 
@@ -71,19 +107,83 @@ const MainContent: React.FC<MainContentProps> = ({ selectedContact, selectedRoom
     setMessageValue(e.target.value);
   };
 
-  useEffect(() => {
-    const fetchMessages = () => {
-      setMessages([
-        { sender: "user", text: "Hello, how are you?", timestamp: new Date() },
-        { sender: "contact", text: "I'm fine, thanks!", timestamp: new Date() },
-        { sender: "user", text: "What have you been up to?", timestamp: new Date() },
-        { sender: "contact", text: "Just working on some projects. How about you?", timestamp: new Date() },
-      ]);
+  const handleWSReceiveMessage = async (event: MessageEvent) => {
+    const eventData = JSON.parse(event.data);
+    
+    if (eventData.type !== 'direct') {
+      return;
+    }
+
+    const { sender_id, content } = eventData;
+
+    if (sender_id === selectedContact?.id) {
+      const newMessage = {
+        sender: "contact",
+        text: content,
+        timestamp: new Date(),
+      };
+      await loadMessages();
+      setMessages([...messages, newMessage]);
+    }
+  }
+
+  const handleWebSocketMessage = () => {
+    const access_token = localStorage.getItem('access_token') || '';
+    const socketUrl = WEBSOCKET_APP_URL + `?access_token=${access_token}`;
+    wsRef.current = new WebSocket(socketUrl);
+
+    console.log('WebSocket connecting...');
+    console.log('WebSocket:', wsRef.current);
+
+    wsRef.current.onopen = () => {
+      console.log('WebSocket connected');
+
+      // Start sending a ping message every 30 seconds to keep the connection alive
+      const pingInterval = setInterval(() => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send('ping');
+          console.log('Ping sent to server');
+        }
+      }, 30000); // Every 30 seconds
+
+      // Clear interval when connection is closed
+      if (wsRef.current) {
+        wsRef.current.onclose = () => {
+          clearInterval(pingInterval);
+          console.log('WebSocket disconnected');
+        };
+      }
     };
 
+    wsRef.current.onmessage = (event) => {
+      console.log('Received:', event.data);
+      handleWSReceiveMessage(event);
+    };
+
+    wsRef.current.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    wsRef.current.onclose = () => {
+      console.log('WebSocket disconnected');
+    };
+
+    // Cleanup on component unmount
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  };
+
+  useEffect(() => {
     if (selectedContact || selectedRoom) {
       loadMessages();
     }
+  }, [selectedContact, selectedRoom]);
+
+  useEffect(() => {
+    handleWebSocketMessage();
   }, [selectedContact, selectedRoom]);
 
   if (!selectedContact && !selectedRoom) {
@@ -124,36 +224,17 @@ const MainContent: React.FC<MainContentProps> = ({ selectedContact, selectedRoom
             borderRadius: "8px",
           }}
         >
-          <h2>{selectedContact ? selectedContact.name : selectedRoom.name}</h2>
+          <h2>#{selectedContact ? selectedContact.id : selectedRoom.id}</h2>
+          <h2>-{selectedContact ? selectedContact.name : selectedRoom.name}</h2>
         </Flex>
 
-        <ChatMessage messages={messages} />
+        <ChatMessages messages={messages} />
 
-        <Flex
-          className="chat-input"
-          style={{
-            paddingTop: "8px",
-            display: "flex",
-            alignItems: "center",
-            marginTop: "auto",
-          }}
-        >
-          <Input.TextArea
-            rows={2}
-            placeholder="Type a message..."
-            value={messageValue}
-            onChange={handleInputChange}
-            style={{
-              marginRight: "8px",
-              resize: "none",
-              maxHeight: "100px",
-              width: "100%",
-            }}
-          />
-          <Button type="primary" onClick={handleSendMessage} disabled={!messageValue.trim()}>
-            Send
-          </Button>
-        </Flex>
+        <ChatInput
+          messageValue={messageValue}
+          onInputChange={handleInputChange}
+          onSendButtonClick={handleSendMessage}
+        />
       </Flex>
     </Layout.Content>
   );

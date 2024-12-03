@@ -1,7 +1,7 @@
 import React from "react";
 import { List, Avatar, Flex } from "antd";
 
-interface ChatMessageProps {
+interface ChatMessagesProps {
   messages: any[];
 }
 
@@ -30,8 +30,8 @@ const renderRightMessage = (msg: any, index: number) => {
         }}
       >
         <List.Item.Meta
-          title={msg.sender === "user" ? "You" : "Contact"}
-          description={msg.text}
+          title={msg?.sender === "user" ? "You" : "Contact"}
+          description={msg?.text}
         />
       </Flex>
 
@@ -42,7 +42,7 @@ const renderRightMessage = (msg: any, index: number) => {
           color: "#1890ff",
         }}
       >
-        {msg.sender === "user" ? "U" : "C"}
+        {msg?.sender === "user" ? "U" : "C"}
       </Avatar>
     </List.Item>
   );
@@ -65,7 +65,7 @@ const renderLeftMessage = (msg: any, index: number) => {
           color: "#1890ff",
         }}
       >
-        {msg.sender === "contact" ? "C" : "U"}
+        {msg?.sender === "contact" ? "C" : "U"}
       </Avatar>
 
       <Flex
@@ -84,8 +84,8 @@ const renderLeftMessage = (msg: any, index: number) => {
         }}
       >
         <List.Item.Meta
-          title={msg.sender === "contact" ? "Contact" : "You"}
-          description={msg.text}
+          title={msg?.sender === "contact" ? "Contact" : "You"}
+          description={msg?.text}
         />
       </Flex>
     </List.Item>
@@ -98,13 +98,14 @@ const renderMessage = (msg: any, index: number) => {
     : renderLeftMessage(msg, index);
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ messages }) => {
+const ChatMessages: React.FC<ChatMessagesProps> = ({ messages }) => {
   return (
     <Flex
       vertical
       style={{
         flex: 1,
-        overflowY: "auto",
+        overflowY: "scroll",
+        maxHeight: "calc(100vh - 150px)",
         flexDirection: "column-reverse",
         backgroundColor: "#fff",
         borderRadius: "8px",
@@ -121,4 +122,4 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ messages }) => {
   );
 };
 
-export default ChatMessage;
+export default ChatMessages;

@@ -70,6 +70,7 @@ const SideBar: React.FC<SideBarProps> = ({
   };
 
   const handleContactClick = (contact: Contact) => {
+    console.log("---> handleContactClick - Selected contact:", contact);
     setSelectedContactId(contact.id);
     setSelectedRoomId(null); // Deselect any selected room
     onContactClick(contact);

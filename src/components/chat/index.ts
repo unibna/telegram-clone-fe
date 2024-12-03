@@ -1,5 +1,7 @@
-import ChatMessage from "./ChatMessage";
+import ChatInput from "./ChatInput";
+import ChatMessages from "./ChatMessages";
 
 export {
-  ChatMessage
+  ChatInput,
+  ChatMessages
 };

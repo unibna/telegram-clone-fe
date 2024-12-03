@@ -5,7 +5,6 @@ import { UserService } from '../services';
 export const fetchMe = createAsyncThunk('user/fetchMe', async (_, { rejectWithValue }) => {
   try {
     const response = await UserService.me();
-    console.log("--> Me:", response.data);
     return response.data;
   } catch (error: any) {
     return rejectWithValue(error.response?.data?.message || 'Failed to fetch user info');
